@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>JenkinsOps</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 20px;
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            background: #1e293b;
+        }
+
+        .success {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .pipeline {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stage {
+            padding: 12px 18px;
+            background: #334155;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>JenkinsOps</h1>
+
+        <p class="subtitle">
+            Self-Healing CI/CD Deployment Platform
+        </p>
+
+        <div class="status">
+
+            <p>
+                Application Status:
+                <span class="success">ONLINE</span>
+            </p>
+
+            <p>
+                Deployment:
+                <span class="success">JENKINS CONTROLLED</span>
+            </p>
+
+        </div>
+
+        <div class="pipeline">
+
+            <div class="stage">GitHub</div>
+            <div class="stage">Jenkins</div>
+            <div class="stage">Test</div>
+            <div class="stage">Docker</div>
+            <div class="stage">Deploy</div>
+            <div class="stage">Health Check</div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

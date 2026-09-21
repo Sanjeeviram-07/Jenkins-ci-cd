@@ -1,0 +1,29 @@
+# Jenkins
+jenkins_home/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary
+tmp/
+temp/
+
+# Build
+dist/
+build/
