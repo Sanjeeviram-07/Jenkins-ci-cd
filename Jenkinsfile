@@ -4,7 +4,8 @@ pipeline {
 
     environment {
         APP_NAME = "jenkinsops"
-        BUILD_VERSION = "${BUILD_NUMBER}"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        BUILD_TIMESTAMP = "${new Date().format('yyyy-MM-dd HH:mm:ss')}"
     }
 
     options {
@@ -32,7 +33,7 @@ pipeline {
             steps {
 
                 echo "================================="
-                echo "CHECKOUT SOURCE CODE"
+                echo "CHECKOUT"
                 echo "================================="
 
                 checkout scm
@@ -40,71 +41,92 @@ pipeline {
         }
 
 
-        stage('Environment Information') {
+        stage('Build Information') {
 
             steps {
 
-                echo "================================="
-                echo "BUILD INFORMATION"
-                echo "================================="
+                echo """
+=========================================
+JENKINSOPS BUILD INFORMATION
+=========================================
 
-                echo "Application : ${APP_NAME}"
-                echo "Build       : ${BUILD_NUMBER}"
-                echo "Job         : ${JOB_NAME}"
-                echo "Workspace   : ${WORKSPACE}"
+Application : ${APP_NAME}
+Build       : ${BUILD_NUMBER}
+Job         : ${JOB_NAME}
+Workspace   : ${WORKSPACE}
+Branch      : ${env.GIT_BRANCH}
+Commit      : ${env.GIT_COMMIT}
+
+=========================================
+"""
             }
         }
 
 
-        stage('Validate Repository') {
+        stage('Repository Validation') {
 
             steps {
 
-                echo "================================="
-                echo "VALIDATING REPOSITORY"
-                echo "================================="
-
                 sh '''
-                    echo "Checking project structure..."
+                    echo "Checking repository..."
 
                     test -f app/index.html
                     test -f Dockerfile
                     test -f Jenkinsfile
+                    test -f tests/test_app.sh
+                    test -f scripts/security-check.sh
 
-                    echo "Repository validation successful."
+                    echo "Repository validation passed."
                 '''
             }
         }
 
 
-        stage('Application Test') {
+        stage('CI Checks') {
 
-            steps {
+            parallel {
 
-                echo "================================="
-                echo "RUNNING APPLICATION TESTS"
-                echo "================================="
+                stage('Unit Tests') {
 
-                sh '''
-                    chmod +x tests/test_app.sh
+                    steps {
 
-                    ./tests/test_app.sh
-                '''
+                        echo "Running application tests..."
+
+                        sh '''
+                            chmod +x tests/test_app.sh
+
+                            ./tests/test_app.sh
+                        '''
+                    }
+                }
+
+
+                stage('Security Check') {
+
+                    steps {
+
+                        echo "Running security check..."
+
+                        sh '''
+                            chmod +x scripts/security-check.sh
+
+                            ./scripts/security-check.sh
+                        '''
+                    }
+                }
             }
         }
 
 
-        stage('Build Docker Image') {
+        stage('Docker Build') {
 
             steps {
 
-                echo "================================="
-                echo "BUILDING DOCKER IMAGE"
-                echo "================================="
+                echo "Building Docker image..."
 
                 sh """
                     docker build \
-                    -t ${APP_NAME}:${BUILD_VERSION} \
+                    -t ${APP_NAME}:${IMAGE_TAG} \
                     -t ${APP_NAME}:latest \
                     .
                 """
@@ -112,17 +134,49 @@ pipeline {
         }
 
 
-        stage('Docker Image Verification') {
+        stage('Docker Verification') {
 
             steps {
 
-                echo "================================="
-                echo "VERIFYING DOCKER IMAGE"
-                echo "================================="
+                echo "Checking Docker image..."
 
                 sh """
                     docker images ${APP_NAME}
+
+                    docker image inspect \
+                    ${APP_NAME}:${IMAGE_TAG} > docker-image-info.json
                 """
+            }
+        }
+
+
+        stage('Create Build Artifact') {
+
+            steps {
+
+                sh """
+                    mkdir -p build-info
+
+                    echo "Application=${APP_NAME}" \
+                        > build-info/deployment.txt
+
+                    echo "Build=${BUILD_NUMBER}" \
+                        >> build-info/deployment.txt
+
+                    echo "Commit=${GIT_COMMIT}" \
+                        >> build-info/deployment.txt
+
+                    echo "Timestamp=${BUILD_TIMESTAMP}" \
+                        >> build-info/deployment.txt
+
+                    echo "Status=CI PASSED" \
+                        >> build-info/deployment.txt
+                """
+
+                archiveArtifacts(
+                    artifacts: 'build-info/**,docker-image-info.json',
+                    fingerprint: true
+                )
             }
         }
     }
@@ -134,12 +188,13 @@ pipeline {
 
             echo """
 =========================================
-        JENKINSOPS BUILD SUCCESS
+        CI PIPELINE SUCCESS
 =========================================
 
-Application : ${APP_NAME}
-Build       : ${BUILD_NUMBER}
-Status      : SUCCESS
+Build ${BUILD_NUMBER} completed successfully.
+
+Docker image:
+${APP_NAME}:${IMAGE_TAG}
 
 =========================================
 """
@@ -150,14 +205,12 @@ Status      : SUCCESS
 
             echo """
 =========================================
-        JENKINSOPS BUILD FAILED
+        CI PIPELINE FAILED
 =========================================
 
-Application : ${APP_NAME}
-Build       : ${BUILD_NUMBER}
-Status      : FAILED
+Build ${BUILD_NUMBER} failed.
 
-Check Jenkins console output.
+Check the failed stage in Jenkins.
 
 =========================================
 """
@@ -168,6 +221,10 @@ Check Jenkins console output.
 
             echo "Pipeline execution completed."
 
+            sh '''
+                echo "Cleaning temporary files..."
+                rm -rf build-info
+            '''
         }
     }
 }
