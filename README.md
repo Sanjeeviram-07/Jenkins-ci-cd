@@ -30,7 +30,7 @@ Developer
     v
 GitHub
     |
-    | Webhook
+    | Webhooks
     v
 Jenkins
     |
